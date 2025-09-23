@@ -147,3 +147,68 @@ class PiecePlacer:
                     return False
         
         return True
+
+class SudokuValidator:
+    """스도쿠 규칙 검사 클래스"""
+    
+    def __init__(self, board):
+        self.board = board
+    
+    def is_valid_number(self, row, col, number):
+        """해당 위치에 숫자를 놓을 수 있는지 스도쿠 규칙으로 검사"""
+        # 같은 행에 동일한 숫자가 있는지 확인
+        for c in range(9):
+            if c != col and self.board.get_value(row, c) == number:
+                return False
+        
+        # 같은 열에 동일한 숫자가 있는지 확인
+        for r in range(9):
+            if r != row and self.board.get_value(r, col) == number:
+                return False
+        
+        # 같은 3x3 박스에 동일한 숫자가 있는지 확인
+        box_row = (row // 3) * 3
+        box_col = (col // 3) * 3
+        
+        for r in range(box_row, box_row + 3):
+            for c in range(box_col, box_col + 3):
+                if (r != row or c != col) and self.board.get_value(r, c) == number:
+                    return False
+        
+        return True
+    
+    def find_empty_cell(self):
+        """빈 칸을 찾아서 (row, col) 반환, 없으면 None"""
+        for row in range(9):
+            for col in range(9):
+                if self.board.is_empty(row, col):
+                    return (row, col)
+        return None
+    
+    def count_solutions(self, max_solutions=2):
+        """해의 개수를 세는 함수 (최대 max_solutions까지만)"""
+        empty_cell = self.find_empty_cell()
+        
+        if empty_cell is None:
+            return 1
+        
+        row, col = empty_cell
+        solutions = 0
+        
+        for number in range(1, 10):
+            if self.is_valid_number(row, col, number):
+                self.board.set_value(row, col, number)
+                
+                solutions += self.count_solutions(max_solutions - solutions)
+                
+                if solutions >= max_solutions:
+                    self.board.set_value(row, col, None)
+                    return solutions
+                
+                self.board.set_value(row, col, None)
+        
+        return solutions
+    
+    def is_unique_solution(self):
+        """유일한 해가 있는지 확인"""
+        return self.count_solutions(2) == 1
