@@ -1,0 +1,5 @@
+{
+  "server_url": "http://localhost:3000",
+  "api_timeout": 30,
+  "_comment": "이 파일을 config.json으로 복사하고 실제 서버 주소를 입력하세요. config.json은 Git에 커밋하지 마세요."
+}

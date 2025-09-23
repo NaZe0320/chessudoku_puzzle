@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from board import Board
 from validators import Piece
+from config import config
 
 try:
     import requests
@@ -82,8 +83,9 @@ class PuzzleDataFormatter:
 class PuzzleAPIClient:
     """퍼즐 서버와 통신하는 API 클라이언트"""
     
-    def __init__(self, base_url="http://localhost:3000"):
-        self.base_url = base_url
+    def __init__(self, base_url=None):
+        # base_url이 제공되지 않으면 설정에서 가져오기
+        self.base_url = base_url if base_url is not None else config.get_server_url()
         if REQUESTS_AVAILABLE:
             self.session = requests.Session()
         else:
@@ -126,7 +128,7 @@ class PuzzleAPIClient:
             print(f"난이도: {difficulty}, 타입: {puzzle_type}")
             print(f"기물 개수: {len(pieces)}개")
             
-            response = self.session.post(url, json=payload, headers=headers, timeout=30)
+            response = self.session.post(url, json=payload, headers=headers, timeout=config.get_api_timeout())
             
             if response.status_code == 201:
                 result = response.json()
