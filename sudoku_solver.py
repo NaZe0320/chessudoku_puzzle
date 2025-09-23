@@ -1,0 +1,93 @@
+from board import Board
+from validators import PiecePlacer, SudokuValidator
+
+class ChessSudokuSolver:
+    """체스 기물과 스도쿠 제약 조건을 모두 고려한 솔버"""
+    
+    def __init__(self, board, pieces):
+        self.board = board
+        self.pieces = pieces  # 배치된 기물들
+        self.sudoku_validator = SudokuValidator(board)
+        self.piece_placer = PiecePlacer(board)
+        self.piece_placer.pieces = pieces  # 기물 정보 설정
+    
+    def is_valid_number(self, row, col, number):
+        """해당 위치에 숫자를 놓을 수 있는지 체스 기물과 스도쿠 규칙 모두 검사"""
+        # 1. 기본 스도쿠 규칙 검사
+        if not self.sudoku_validator.is_valid_number(row, col, number):
+            return False
+        
+        # 2. 체스 기물 규칙 검사
+        if not self.piece_placer.is_valid_number_for_piece(row, col, number):
+            return False
+        
+        return True
+    
+    def find_empty_cell(self):
+        """빈 칸을 찾아서 (row, col) 반환, 없으면 None"""
+        return self.sudoku_validator.find_empty_cell()
+    
+    def solve(self):
+        """백트래킹을 사용한 스도쿠 솔버"""
+        empty_cell = self.find_empty_cell()
+        
+        # 모든 칸이 채워졌으면 성공
+        if empty_cell is None:
+            return True
+        
+        row, col = empty_cell
+        
+        # 1부터 9까지 숫자 시도
+        for number in range(1, 10):
+            if self.is_valid_number(row, col, number):
+                # 숫자 배치
+                self.board.set_value(row, col, number)
+                
+                # 재귀적으로 다음 빈 칸 채우기
+                if self.solve():
+                    return True
+                
+                # 실패하면 되돌리기
+                self.board.set_value(row, col, None)
+        
+        # 모든 숫자를 시도했지만 실패
+        return False
+    
+    def solve_with_pieces(self):
+        """기물이 배치된 상태에서 스도쿠 풀기"""
+        print("체스 기물과 스도쿠 제약 조건으로 숫자 채우기 시작...")
+        
+        if self.solve():
+            print("스도쿠 풀이 성공!")
+            return True
+        else:
+            print("스도쿠 풀이 실패 - 해가 없습니다.")
+            return False
+    
+    def count_solutions(self, max_solutions=2):
+        """해의 개수를 세는 함수 (유일해 검사용)"""
+        empty_cell = self.find_empty_cell()
+        
+        if empty_cell is None:
+            return 1
+        
+        row, col = empty_cell
+        solutions = 0
+        
+        for number in range(1, 10):
+            if self.is_valid_number(row, col, number):
+                self.board.set_value(row, col, number)
+                
+                solutions += self.count_solutions(max_solutions - solutions)
+                
+                if solutions >= max_solutions:
+                    self.board.set_value(row, col, None)
+                    return solutions
+                
+                self.board.set_value(row, col, None)
+        
+        return solutions
+    
+    def is_unique_solution(self):
+        """유일한 해가 있는지 확인"""
+        return self.count_solutions(2) == 1

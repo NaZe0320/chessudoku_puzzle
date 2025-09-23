@@ -1,6 +1,7 @@
 from board import Board
 from validators import SudokuValidator
 from random_placer import RandomPiecePlacer
+from sudoku_solver import ChessSudokuSolver
 
 # 테스트
 board = Board()
@@ -18,11 +19,13 @@ placed_count = random_placer.place_pieces_randomly()
 print("\n기물 배치 후:")
 board.print_board()
 
-# 스도쿠 검사 테스트
-print("\n스도쿠 검사 테스트:")
-print("빈 칸 찾기:", validator.find_empty_cell())
-print("유일해 검사:", validator.is_unique_solution())
+# 스도쿠 솔버로 숫자 채우기
+print("\n체스 기물과 스도쿠 제약 조건으로 숫자 채우기:")
+solver = ChessSudokuSolver(board, random_placer.get_pieces())
+success = solver.solve_with_pieces()
 
-print(f"\n배치된 기물 수: {len(random_placer.get_pieces())}")
-for piece in random_placer.get_pieces():
-    print(f"{piece.piece_type} at ({piece.row}, {piece.col})")
+if success:
+    print("\n완성된 보드:")
+    board.print_board()
+else:
+    print("숫자 채우기 실패!")

@@ -185,30 +185,3 @@ class SudokuValidator:
                     return (row, col)
         return None
     
-    def count_solutions(self, max_solutions=2):
-        """해의 개수를 세는 함수 (최대 max_solutions까지만)"""
-        empty_cell = self.find_empty_cell()
-        
-        if empty_cell is None:
-            return 1
-        
-        row, col = empty_cell
-        solutions = 0
-        
-        for number in range(1, 10):
-            if self.is_valid_number(row, col, number):
-                self.board.set_value(row, col, number)
-                
-                solutions += self.count_solutions(max_solutions - solutions)
-                
-                if solutions >= max_solutions:
-                    self.board.set_value(row, col, None)
-                    return solutions
-                
-                self.board.set_value(row, col, None)
-        
-        return solutions
-    
-    def is_unique_solution(self):
-        """유일한 해가 있는지 확인"""
-        return self.count_solutions(2) == 1
