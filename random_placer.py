@@ -15,25 +15,19 @@ class RandomPiecePlacer:
             # 기본 기물 개수 설정
             piece_counts = {'K': 2, 'Q': 2, 'R': 3, 'B': 3, 'N': 4}
         
-        # 모든 가능한 위치 생성
-        all_positions = [(i, j) for i in range(9) for j in range(9)]
-        random.shuffle(all_positions)
-        
         placed_count = 0
         
         # 각 기물 타입별로 배치
         for piece_type, count in piece_counts.items():
             for _ in range(count):
-                # 빈 위치 찾기
                 placed = False
                 attempts = 0
-                max_attempts = 100  # 무한 루프 방지
+                max_attempts = 200  # 시도 횟수 증가
                 
                 while not placed and attempts < max_attempts:
-                    if not all_positions:
-                        break
-                    
-                    row, col = all_positions.pop(0)
+                    # 매번 새로운 랜덤 위치 선택
+                    row = random.randint(0, 8)
+                    col = random.randint(0, 8)
                     
                     # 해당 위치가 비어있고 기물 배치가 가능한지 확인
                     if self.board.is_empty(row, col):
@@ -47,12 +41,11 @@ class RandomPiecePlacer:
                                 # 충돌하면 되돌리기
                                 self.placer.pieces.pop()
                                 self.board.set_value(row, col, None)
-                                all_positions.append((row, col))  # 다시 시도할 수 있도록 추가
                     
                     attempts += 1
                 
                 if not placed:
-                    print(f"경고: {piece_type} 기물 {count}개 중 일부를 배치하지 못했습니다.")
+                    print(f"경고: {piece_type} 기물을 배치하지 못했습니다. ({attempts}번 시도)")
         
         print(f"총 {placed_count}개의 기물이 배치되었습니다.")
         return placed_count
