@@ -184,4 +184,3 @@ class SudokuValidator:
                 if self.board.is_empty(row, col):
                     return (row, col)
         return None
-    

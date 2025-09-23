@@ -1,12 +1,10 @@
 from board import Board
-from validators import SudokuValidator
 from random_placer import RandomPiecePlacer
 from sudoku_solver import ChessSudokuSolver
 
 # 테스트
 board = Board()
 random_placer = RandomPiecePlacer(board)
-validator = SudokuValidator(board)
 
 print("랜덤 기물 배치 테스트:")
 print("빈 보드:")

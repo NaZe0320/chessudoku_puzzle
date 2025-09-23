@@ -1,5 +1,6 @@
 from board import Board
 from validators import PiecePlacer, SudokuValidator
+import random
 
 class ChessSudokuSolver:
     """체스 기물과 스도쿠 제약 조건을 모두 고려한 솔버"""
@@ -37,8 +38,10 @@ class ChessSudokuSolver:
         
         row, col = empty_cell
         
-        # 1부터 9까지 숫자 시도
-        for number in range(1, 10):
+        # 1부터 9까지 숫자를 랜덤 순서로 시도
+        numbers = list(range(1, 10))
+        random.shuffle(numbers)
+        for number in numbers:
             if self.is_valid_number(row, col, number):
                 # 숫자 배치
                 self.board.set_value(row, col, number)
@@ -64,30 +67,3 @@ class ChessSudokuSolver:
             print("스도쿠 풀이 실패 - 해가 없습니다.")
             return False
     
-    def count_solutions(self, max_solutions=2):
-        """해의 개수를 세는 함수 (유일해 검사용)"""
-        empty_cell = self.find_empty_cell()
-        
-        if empty_cell is None:
-            return 1
-        
-        row, col = empty_cell
-        solutions = 0
-        
-        for number in range(1, 10):
-            if self.is_valid_number(row, col, number):
-                self.board.set_value(row, col, number)
-                
-                solutions += self.count_solutions(max_solutions - solutions)
-                
-                if solutions >= max_solutions:
-                    self.board.set_value(row, col, None)
-                    return solutions
-                
-                self.board.set_value(row, col, None)
-        
-        return solutions
-    
-    def is_unique_solution(self):
-        """유일한 해가 있는지 확인"""
-        return self.count_solutions(2) == 1
