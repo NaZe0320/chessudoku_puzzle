@@ -129,7 +129,7 @@ def show_help():
     print()
     print("   # 일반 퍼즐 생성")
     print("   create_normal_puzzle()")
-    print("   create_normal_puzzle(server_url='http://your-server.com:3000')")
+    print("   create_normal_puzzle(server_url='https://luteal-credulous-peyton.ngrok-free.dev')")
     print("   create_normal_puzzle(difficulty='hard')")
     print()
     print("   # 데일리 퍼즐 생성")
@@ -140,7 +140,7 @@ def show_help():
     DifficultyManager.list_difficulties()
     print()
     print("4. 서버 설정:")
-    print("   - 기본값: http://localhost:3000")
+    print("   - 기본값: https://luteal-credulous-peyton.ngrok-free.dev")
     print("   - 사용자 지정: server_url 매개변수 사용")
 
 if __name__ == "__main__":
