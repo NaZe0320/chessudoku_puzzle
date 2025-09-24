@@ -84,69 +84,64 @@ class PiecePlacer:
     
     def is_valid_number_for_piece(self, row, col, number):
         """해당 위치에 숫자를 놓을 수 있는지 기물 규칙으로 검사"""
-        piece = None
-        for p in self.pieces:
-            if p.row == row and p.col == col:
-                piece = p
-                break
+        # 모든 기물에 대해 검사
+        for piece in self.pieces:
+            # 경우 1: 기물이 있는 위치에 이미 같은 숫자가 있고, 그 기물이 현재 위치를 공격할 수 있는 경우
+            piece_value = self.board.get_value(piece.row, piece.col)
+            if isinstance(piece_value, int) and piece_value == number:
+                if self._can_piece_attack(piece, row, col):
+                    return False
+            
+            # 경우 2: 현재 위치에 숫자를 놓으려는데, 그 위치가 기물 위치이고 기물의 영향 범위에 같은 숫자가 있는 경우
+            if piece.row == row and piece.col == col:
+                # 이 기물이 공격할 수 있는 모든 위치에 같은 숫자가 있는지 확인
+                for target_row in range(9):
+                    for target_col in range(9):
+                        if target_row == row and target_col == col:
+                            continue
+                        target_value = self.board.get_value(target_row, target_col)
+                        if isinstance(target_value, int) and target_value == number:
+                            if self._can_piece_attack(piece, target_row, target_col):
+                                return False
         
-        if not piece:
-            return True  # 기물이 없는 위치는 자유롭게
+        return True
+    
+    def _can_piece_attack(self, piece, target_row, target_col):
+        """기물이 목표 위치를 공격할 수 있는지 확인"""
+        piece_row, piece_col = piece.row, piece.col
         
-        # 각 기물별 규칙 검사
+        # 같은 위치면 공격할 수 없음
+        if piece_row == target_row and piece_col == target_col:
+            return False
+        
         if piece.piece_type == 'N':  # 나이트
-            knight_moves = self.get_knight_moves(row, col)
-            for r, c in knight_moves:
-                if self.board.get_value(r, c) == number:
-                    return False
+            knight_moves = self.get_knight_moves(piece_row, piece_col)
+            return (target_row, target_col) in knight_moves
         
-        elif piece.piece_type == 'R':  # 룩 (스도쿠 기본 규칙과 동일)
-            # 같은 행 검사
-            for c in range(9):
-                if c != col and self.board.get_value(row, c) == number:
-                    return False
-            # 같은 열 검사
-            for r in range(9):
-                if r != row and self.board.get_value(r, col) == number:
-                    return False
+        elif piece.piece_type == 'R':  # 룩
+            # 같은 행 또는 같은 열
+            return piece_row == target_row or piece_col == target_col
         
         elif piece.piece_type == 'B':  # 비숍
-            # 오른대각선 검사
-            right_diag = self.get_diagonal_positions(row, col, 'right')
-            for r, c in right_diag:
-                if self.board.get_value(r, c) == number:
-                    return False
-            # 왼대각선 검사
-            left_diag = self.get_diagonal_positions(row, col, 'left')
-            for r, c in left_diag:
-                if self.board.get_value(r, c) == number:
-                    return False
+            # 대각선상에 있는지 확인
+            right_diag = self.get_diagonal_positions(piece_row, piece_col, 'right')
+            left_diag = self.get_diagonal_positions(piece_row, piece_col, 'left')
+            return (target_row, target_col) in right_diag or (target_row, target_col) in left_diag
         
         elif piece.piece_type == 'Q':  # 퀸 (룩 + 비숍)
             # 룩 규칙
-            for c in range(9):
-                if c != col and self.board.get_value(row, c) == number:
-                    return False
-            for r in range(9):
-                if r != row and self.board.get_value(r, col) == number:
-                    return False
+            if piece_row == target_row or piece_col == target_col:
+                return True
             # 비숍 규칙
-            right_diag = self.get_diagonal_positions(row, col, 'right')
-            for r, c in right_diag:
-                if self.board.get_value(r, c) == number:
-                    return False
-            left_diag = self.get_diagonal_positions(row, col, 'left')
-            for r, c in left_diag:
-                if self.board.get_value(r, c) == number:
-                    return False
+            right_diag = self.get_diagonal_positions(piece_row, piece_col, 'right')
+            left_diag = self.get_diagonal_positions(piece_row, piece_col, 'left')
+            return (target_row, target_col) in right_diag or (target_row, target_col) in left_diag
         
         elif piece.piece_type == 'K':  # 킹
-            king_moves = self.get_king_moves(row, col)
-            for r, c in king_moves:
-                if self.board.get_value(r, c) == number:
-                    return False
+            king_moves = self.get_king_moves(piece_row, piece_col)
+            return (target_row, target_col) in king_moves
         
-        return True
+        return False
 
 class SudokuValidator:
     """스도쿠 규칙 검사 클래스"""
@@ -158,13 +153,19 @@ class SudokuValidator:
         """해당 위치에 숫자를 놓을 수 있는지 스도쿠 규칙으로 검사"""
         # 같은 행에 동일한 숫자가 있는지 확인
         for c in range(9):
-            if c != col and self.board.get_value(row, c) == number:
-                return False
+            if c != col:
+                value = self.board.get_value(row, c)
+                # 숫자인 경우만 비교 (기물 문자는 무시)
+                if isinstance(value, int) and value == number:
+                    return False
         
         # 같은 열에 동일한 숫자가 있는지 확인
         for r in range(9):
-            if r != row and self.board.get_value(r, col) == number:
-                return False
+            if r != row:
+                value = self.board.get_value(r, col)
+                # 숫자인 경우만 비교 (기물 문자는 무시)
+                if isinstance(value, int) and value == number:
+                    return False
         
         # 같은 3x3 박스에 동일한 숫자가 있는지 확인
         box_row = (row // 3) * 3
@@ -172,8 +173,11 @@ class SudokuValidator:
         
         for r in range(box_row, box_row + 3):
             for c in range(box_col, box_col + 3):
-                if (r != row or c != col) and self.board.get_value(r, c) == number:
-                    return False
+                if (r != row or c != col):
+                    value = self.board.get_value(r, c)
+                    # 숫자인 경우만 비교 (기물 문자는 무시)
+                    if isinstance(value, int) and value == number:
+                        return False
         
         return True
     
