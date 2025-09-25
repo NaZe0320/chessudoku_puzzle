@@ -1,8 +1,6 @@
 from board import Board
 from board_generator import BoardGenerator
 from random_placer import RandomPiecePlacer
-from sudoku_solver import ChesSudokuSolver
-from puzzle_generator import PuzzleGenerator, PuzzleSolver
 from puzzle_api_client import PuzzleAPIClient, DifficultyManager
 from config import config
 
@@ -13,10 +11,7 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     print("=" * 50)
     
     board = Board()
-    
-    print("빈 보드:")
-    board.print_board()
-    
+        
     random_placer = RandomPiecePlacer(board)
     placed_count = random_placer.place_pieces_randomly()
     
@@ -38,14 +33,14 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     else:
         print("보드 생성에 실패했습니다.")
     
-    # # 3. 퍼즐 생성 (빈칸 뚫기 - 하나씩 뚫으면서 풀이 검증)
+    # # 3. 퍼즐 생성 (빈칸 뚫기 - 유일해 검증 없이 순수하게 빈칸만 뚫기)
     # print("\n" + "=" * 50)
-    # print("3단계: 퍼즐 생성 (빈칸 뚫기 - 하나씩 뚫으면서 풀이 검증)")
+    # print("3단계: 퍼즐 생성 (빈칸 뚫기 - 유일해 검증 없이 순수하게 빈칸만 뚫기)")
     # print("=" * 50)
     
-    # max_holes = 35  # 원하는 빈칸 개수 설정
+    # max_holes = 25  # 원하는 빈칸 개수 설정
     # puzzle_generator = PuzzleGenerator(board, random_placer.get_pieces(), max_holes)
-    # puzzle_board = puzzle_generator.generate_puzzle()
+    # puzzle_board = puzzle_generator.generate_simple_puzzle()
     
     # print(f"\n생성된 퍼즐 ({puzzle_generator.holes_count}개 빈칸):")
     # puzzle_board.print_board()

@@ -13,7 +13,7 @@ class RandomPiecePlacer:
         """랜덤하게 기물들을 배치"""
         if piece_counts is None:
             # 기본 기물 개수 설정
-            piece_counts = {'K': 1, 'Q': 0, 'R': 0, 'B': 2, 'N': 2}
+            piece_counts = {'K': 0, 'Q': 0, 'R': 0, 'B': 0, 'N': 4}
         
         # 기물 타입과 개수를 리스트로 변환하여 랜덤하게 섞기
         pieces_to_place = []
@@ -54,9 +54,6 @@ class RandomPiecePlacer:
             
             if not placed:
                 print(f"경고: {piece_type} 기물을 배치하지 못했습니다. ({attempts}번 시도)")
-        
-        print(f"총 {placed_count}개의 기물이 배치되었습니다.")
-        return placed_count
     
     def is_valid_piece_placement(self):
         """현재 기물 배치가 유효한지 검사 (기물끼리 충돌하지 않는지)"""
