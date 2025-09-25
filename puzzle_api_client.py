@@ -154,6 +154,51 @@ class PuzzleAPIClient:
                 print(f"❌ 예상치 못한 오류: {str(e)}")
                 return False, None
     
+    def delete_puzzle(self, puzzle_id):
+        """퍼즐을 서버에서 삭제"""
+        if not REQUESTS_AVAILABLE:
+            print("❌ requests 모듈이 없어 서버 삭제 요청을 할 수 없습니다.")
+            return False, None
+        
+        try:
+            # API 요청 전송
+            url = f"{self.base_url}/api/puzzle/{puzzle_id}"
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            print(f"서버에서 퍼즐 삭제 중... ({url})")
+            print(f"퍼즐 ID: {puzzle_id}")
+            
+            response = self.session.delete(url, headers=headers, timeout=config.get_api_timeout())
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"✅ 퍼즐 삭제 성공! (ID: {puzzle_id})")
+                return True, result
+            elif response.status_code == 404:
+                print(f"❌ 퍼즐을 찾을 수 없습니다 (ID: {puzzle_id})")
+                return False, None
+            else:
+                print(f"❌ 퍼즐 삭제 실패: {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"오류 메시지: {error_data.get('message', '알 수 없는 오류')}")
+                except:
+                    print(f"응답 내용: {response.text}")
+                return False, None
+                
+        except Exception as e:
+            if REQUESTS_AVAILABLE and "ConnectionError" in str(type(e)):
+                print("❌ 서버 연결 실패: 서버가 실행 중인지 확인해주세요.")
+                return False, None
+            elif REQUESTS_AVAILABLE and "Timeout" in str(type(e)):
+                print("❌ 요청 시간 초과: 서버 응답이 너무 느립니다.")
+                return False, None
+            else:
+                print(f"❌ 예상치 못한 오류: {str(e)}")
+                return False, None
+    
     def set_server_url(self, url):
         """서버 URL 설정"""
         self.base_url = url
@@ -243,6 +288,31 @@ def test_data_formatting():
     
     print(f"\n생성된 페이로드 크기: {len(json.dumps(payload))} bytes")
     print("페이로드 구조 확인 완료!")
+
+def test_delete_puzzle(puzzle_id, server_url=None):
+    """퍼즐 삭제 테스트"""
+    print("=" * 50)
+    print("퍼즐 삭제 테스트")
+    print("=" * 50)
+    
+    # API 클라이언트 생성
+    api_client = PuzzleAPIClient()
+    
+    # 서버 URL 설정
+    if server_url:
+        api_client.set_server_url(server_url)
+    
+    # 퍼즐 삭제 시도
+    success, result = api_client.delete_puzzle(puzzle_id)
+    
+    if success:
+        print("✅ 퍼즐 삭제 테스트 성공!")
+        if result:
+            print(f"서버 응답: {result}")
+    else:
+        print("❌ 퍼즐 삭제 테스트 실패!")
+    
+    return success, result
 
 if __name__ == "__main__":
     # 테스트 실행
