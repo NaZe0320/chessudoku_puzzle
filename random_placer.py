@@ -13,39 +13,47 @@ class RandomPiecePlacer:
         """랜덤하게 기물들을 배치"""
         if piece_counts is None:
             # 기본 기물 개수 설정
-            piece_counts = {'K': 2, 'Q': 2, 'R': 3, 'B': 3, 'N': 4}
+            piece_counts = {'K': 1, 'Q': 0, 'R': 0, 'B': 2, 'N': 2}
+        
+        # 기물 타입과 개수를 리스트로 변환하여 랜덤하게 섞기
+        pieces_to_place = []
+        for piece_type, count in piece_counts.items():
+            for _ in range(count):
+                pieces_to_place.append(piece_type)
+        
+        # 기물 배치 순서를 랜덤하게 섞기
+        random.shuffle(pieces_to_place)
         
         placed_count = 0
         
-        # 각 기물 타입별로 배치
-        for piece_type, count in piece_counts.items():
-            for _ in range(count):
-                placed = False
-                attempts = 0
-                max_attempts = 200  # 시도 횟수 증가
+        # 랜덤하게 섞인 순서로 기물 배치
+        for piece_type in pieces_to_place:
+            placed = False
+            attempts = 0
+            max_attempts = 200  # 시도 횟수 증가
+            
+            while not placed and attempts < max_attempts:
+                # 매번 새로운 랜덤 위치 선택
+                row = random.randint(0, 8)
+                col = random.randint(0, 8)
                 
-                while not placed and attempts < max_attempts:
-                    # 매번 새로운 랜덤 위치 선택
-                    row = random.randint(0, 8)
-                    col = random.randint(0, 8)
-                    
-                    # 해당 위치가 비어있고 기물 배치가 가능한지 확인
-                    if self.board.is_empty(row, col):
-                        # 임시로 기물 배치해서 유효성 검사
-                        if self.placer.place_piece(piece_type, row, col):
-                            # 유효성 검사 (다른 기물과 충돌하지 않는지)
-                            if self.is_valid_piece_placement():
-                                placed = True
-                                placed_count += 1
-                            else:
-                                # 충돌하면 되돌리기
-                                self.placer.pieces.pop()
-                                self.board.set_value(row, col, None)
-                    
-                    attempts += 1
+                # 해당 위치가 비어있고 기물 배치가 가능한지 확인
+                if self.board.is_empty(row, col):
+                    # 임시로 기물 배치해서 유효성 검사
+                    if self.placer.place_piece(piece_type, row, col):
+                        # 유효성 검사 (다른 기물과 충돌하지 않는지)
+                        if self.is_valid_piece_placement():
+                            placed = True
+                            placed_count += 1
+                        else:
+                            # 충돌하면 되돌리기
+                            self.placer.pieces.pop()
+                            self.board.set_value(row, col, None)
                 
-                if not placed:
-                    print(f"경고: {piece_type} 기물을 배치하지 못했습니다. ({attempts}번 시도)")
+                attempts += 1
+            
+            if not placed:
+                print(f"경고: {piece_type} 기물을 배치하지 못했습니다. ({attempts}번 시도)")
         
         print(f"총 {placed_count}개의 기물이 배치되었습니다.")
         return placed_count

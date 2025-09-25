@@ -28,8 +28,10 @@ class Board:
             for j in range(9):
                 if self.board[i][j] is None:
                     print(".", end=" ")  # 빈칸은 .으로 표시
+                elif isinstance(self.board[i][j], str):
+                    print(f"{self.board[i][j]}", end=" ") 
                 else:
-                    print(self.board[i][j], end=" ")
+                    print(self.board[i][j], end=" ")  # 숫자는 그대로 표시
             print()  # 줄바꿈
     
     def clear_board(self):

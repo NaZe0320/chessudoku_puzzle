@@ -1,49 +1,49 @@
 from board import Board
 from random_placer import RandomPiecePlacer
-from sudoku_solver import ChessSudokuSolver
+from sudoku_solver import ChesSudokuSolver
 from puzzle_generator import PuzzleGenerator, PuzzleSolver
 from puzzle_api_client import PuzzleAPIClient, DifficultyManager
 from config import config
 
 def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_date=None):
-    # 1. 기물 배치
+    # 1. 기물 배치 (빈 보드에)
     print("=" * 50)
     print("1단계: 랜덤 기물 배치")
     print("=" * 50)
     
     board = Board()
-    random_placer = RandomPiecePlacer(board)
     
     print("빈 보드:")
     board.print_board()
     
-    print("\n랜덤 기물 배치 중...")
+    random_placer = RandomPiecePlacer(board)
     placed_count = random_placer.place_pieces_randomly()
     
+    print(f"\n기물 배치 완료: {placed_count}개")
     print("\n기물 배치 후:")
     board.print_board()
     
-    # 2. 스도쿠 솔버로 숫자 채우기
+    # 2. 완전한 스도쿠 보드 생성 (기물 제약 조건 고려)
     print("\n" + "=" * 50)
-    print("2단계: 체스 기물과 스도쿠 제약 조건으로 숫자 채우기")
+    print("2단계: 완전한 스도쿠 보드 생성 (기물 제약 조건 고려)")
     print("=" * 50)
     
-    solver = ChessSudokuSolver(board, random_placer.get_pieces())
+    solver = ChesSudokuSolver(board, random_placer.get_pieces())
     success = solver.solve_with_pieces()
     
     if not success:
-        print("숫자 채우기 실패!")
+        print("기물 제약 조건을 만족하는 스도쿠 보드 생성 실패!")
         return
     
-    print("\n완성된 보드:")
+    print("\n기물 제약 조건을 만족하는 완성된 보드:")
     board.print_board()
     
-    # 3. 퍼즐 생성 (빈칸 뚫기)
+    # 3. 퍼즐 생성 (빈칸 뚫기 - 하나씩 뚫으면서 풀이 검증)
     print("\n" + "=" * 50)
-    print("3단계: 퍼즐 생성 (빈칸 뚫기)")
+    print("3단계: 퍼즐 생성 (빈칸 뚫기 - 하나씩 뚫으면서 풀이 검증)")
     print("=" * 50)
     
-    max_holes = 50  # 원하는 빈칸 개수 설정
+    max_holes = 35  # 원하는 빈칸 개수 설정
     puzzle_generator = PuzzleGenerator(board, random_placer.get_pieces(), max_holes)
     puzzle_board = puzzle_generator.generate_puzzle()
     
@@ -58,35 +58,35 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     puzzle_solver = PuzzleSolver(puzzle_board, random_placer.get_pieces())
     success, solved_board = puzzle_solver.solve_puzzle()
     
-    # 5. 서버로 퍼즐 전송
-    print("\n" + "=" * 50)
-    print("5단계: 서버로 퍼즐 전송")
-    print("=" * 50)
-    
-    # 난이도 결정
-    if custom_difficulty:
-        difficulty = custom_difficulty
-        print(f"사용자 지정 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
-    else:
-        difficulty = DifficultyManager.get_difficulty_by_holes(puzzle_generator.holes_count)
-        print(f"자동 결정된 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
-    
-    # API 클라이언트 생성
-    api_client = PuzzleAPIClient()
-    
-    # 서버 URL 설정
-    if server_url:
-        api_client.set_server_url(server_url)
-    
-    # 퍼즐 업로드
-    upload_success, upload_result = api_client.upload_puzzle(
-        puzzle_board=puzzle_board,
-        answer_board=board,  # 완성된 보드가 정답
-        pieces=random_placer.get_pieces(),
-        difficulty=difficulty,
-        puzzle_type=puzzle_type,
-        daily_date=daily_date
-    )
+    # 5. 서버로 퍼즐 전송 (주석 처리)
+    # print("\n" + "=" * 50)
+    # print("5단계: 서버로 퍼즐 전송")
+    # print("=" * 50)
+    # 
+    # # 난이도 결정
+    # if custom_difficulty:
+    #     difficulty = custom_difficulty
+    #     print(f"사용자 지정 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
+    # else:
+    #     difficulty = DifficultyManager.get_difficulty_by_holes(puzzle_generator.holes_count)
+    #     print(f"자동 결정된 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
+    # 
+    # # API 클라이언트 생성
+    # api_client = PuzzleAPIClient()
+    # 
+    # # 서버 URL 설정
+    # if server_url:
+    #     api_client.set_server_url(server_url)
+    # 
+    # # 퍼즐 업로드
+    # upload_success, upload_result = api_client.upload_puzzle(
+    #     puzzle_board=puzzle_board,
+    #     answer_board=board,  # 완성된 보드가 정답
+    #     pieces=random_placer.get_pieces(),
+    #     difficulty=difficulty,
+    #     puzzle_type=puzzle_type,
+    #     daily_date=daily_date
+    # )
     
     # 결과 요약
     print("\n" + "=" * 50)
@@ -97,14 +97,14 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     else:
         print("퍼즐 풀이 실패 😞")
     
-    if upload_success:
-        print("서버 업로드 성공! 🚀")
-        if upload_result and "data" in upload_result:
-            puzzle_id = upload_result["data"].get("puzzle_id")
-            if puzzle_id:
-                print(f"퍼즐 ID: {puzzle_id}")
-    else:
-        print("서버 업로드 실패 📤")
+    # if upload_success:
+    #     print("서버 업로드 성공! 🚀")
+    #     if upload_result and "data" in upload_result:
+    #         puzzle_id = upload_result["data"].get("puzzle_id")
+    #         if puzzle_id:
+    #             print(f"퍼즐 ID: {puzzle_id}")
+    # else:
+    #     print("서버 업로드 실패 📤")
 
 # 사용자 편의 함수들
 def create_normal_puzzle(server_url=None, difficulty=None):
