@@ -79,7 +79,7 @@ class PuzzleGenerator:
         return solution_count == 1
     
     def count_solutions(self, max_count=2):
-        """해의 개수를 세는 함수 (최대 max_count개까지만)"""
+        """해의 개수를 세는 함수 (최대 max_count개까지만) - 참조 코드 방식"""
         # 현재 퍼즐 보드 복사
         test_board = Board()
         self._copy_board(self.puzzle_board, test_board)
@@ -87,272 +87,49 @@ class PuzzleGenerator:
         # 솔버 생성
         solver = ChesSudokuSolver(test_board, self.pieces)
         
-        # 해의 개수 세기
-        return self._count_solutions_recursive(solver, 0, max_count)
+        # 해의 개수 세기 (참조 코드 방식)
+        return self._count_solutions_reference_style(solver, max_count)
     
-    def _count_solutions_recursive(self, solver, current_count, max_count):
-        """재귀적으로 해의 개수를 세는 함수"""
-        if current_count >= max_count:
-            return current_count
+    def _count_solutions_reference_style(self, solver, max_count):
+        """참조 코드 방식의 해 개수 세기 함수"""
+        empty_cells = solver._get_empty_cells()
         
-        # 빈 칸 찾기
-        empty_cell = solver.find_empty_cell()
+        if not empty_cells:
+            return 1  # 모든 칸이 채워져 있음
         
-        # 모든 칸이 채워졌으면 해를 하나 발견
-        if empty_cell is None:
-            return current_count + 1
-        
-        row, col = empty_cell
-        solutions_found = current_count
-        
-        # 1부터 9까지 숫자를 순서대로 시도 (랜덤 X)
-        for number in range(1, 10):
-            if solver.is_valid_number(row, col, number):
-                # 숫자 배치
-                solver.board.set_value(row, col, number)
-                
-                # 재귀적으로 해 개수 세기
-                solutions_found = self._count_solutions_recursive(solver, solutions_found, max_count)
-                
-                # 최대 개수에 도달하면 조기 종료
-                if solutions_found >= max_count:
-                    solver.board.set_value(row, col, None)
-                    return solutions_found
-                
-                # 되돌리기
-                solver.board.set_value(row, col, None)
-        
-        return solutions_found
-
-class PuzzleSolver:
-    """다양한 풀이 전략을 제공하는 퍼즐 솔버"""
+        return self._count_solutions_recursive_reference(solver, empty_cells, 0, max_count)
     
-    def __init__(self, puzzle_board, pieces):
-        self.original_board = Board()
-        self._copy_board(puzzle_board, self.original_board)
-        self.pieces = pieces
-    
-    def _copy_board(self, source_board, target_board):
-        """보드 내용 복사"""
-        for row in range(9):
-            for col in range(9):
-                target_board.set_value(row, col, source_board.get_value(row, col))
-    
-    
-    def solve_constraint_propagation(self):
-        """제약 전파 + 백트래킹"""
-        print("풀이 방법: 제약 전파 + 백트래킹")
-        board_copy = Board()
-        self._copy_board(self.original_board, board_copy)
+    def _count_solutions_recursive_reference(self, solver, empty_cells, cell_index, max_count):
+        """참조 코드 방식의 재귀적 해 개수 세기"""
+        if cell_index >= len(empty_cells):
+            return 1  # 모든 칸이 채워졌음
         
-        # 고급 제약 전파 적용
-        solver = ConstraintPropagationSolver(board_copy, self.pieces)
-        success = solver.solve_with_constraint_propagation()
-        
-        if success:
-            print("풀이 성공!")
-            board_copy.print_board()
-        else:
-            print("풀이 실패!")
-        
-        return success, board_copy
-    
-    
-    
-    def solve_puzzle(self):
-        """제약 전파 + 백트래킹으로 퍼즐 풀기"""
-        print("=" * 50)
-        print("제약 전파 + 백트래킹으로 퍼즐 풀기")
-        print("=" * 50)
-        
-        success, result_board = self.solve_constraint_propagation()
-        return success, result_board
-
-
-class ConstraintPropagationSolver:
-    """제약 전파를 활용한 고급 스도쿠 솔버"""
-    
-    def __init__(self, board, pieces):
-        self.board = board
-        self.pieces = pieces
-        self.solver = ChesSudokuSolver(board, pieces)
-        
-        # 각 칸의 가능한 숫자들을 저장하는 3차원 배열
-        self.candidates = [[[True for _ in range(10)] for _ in range(9)] for _ in range(9)]
-        self._initialize_candidates()
-    
-    def _initialize_candidates(self):
-        """각 칸의 초기 후보 숫자들 설정"""
-        for row in range(9):
-            for col in range(9):
-                if not self.board.is_empty(row, col):
-                    # 이미 채워진 칸은 모든 후보를 False로
-                    for num in range(1, 10):
-                        self.candidates[row][col][num] = False
-                else:
-                    # 빈 칸은 유효한 숫자들만 True로
-                    for num in range(1, 10):
-                        self.candidates[row][col][num] = self.solver.is_valid_number(row, col, num)
-    
-    def solve_with_constraint_propagation(self):
-        """제약 전파 + 백트래킹으로 풀이"""
-        # 1단계: 제약 전파로 확실한 칸들 채우기
-        progress = True
-        while progress:
-            progress = False
-            
-            # Naked Singles: 후보가 하나뿐인 칸 채우기
-            if self._apply_naked_singles():
-                progress = True
-            
-            # Hidden Singles: 특정 숫자가 들어갈 곳이 하나뿐인 경우
-            if self._apply_hidden_singles():
-                progress = True
-            
-            # 후보 업데이트
-            if self._update_candidates():
-                progress = True
-        
-        # 2단계: 남은 빈 칸들은 백트래킹으로 해결
-        empty_count = sum(1 for row in range(9) for col in range(9) if self.board.is_empty(row, col))
-        if empty_count > 0:
-            return self._backtrack_with_candidates()
-        else:
-            return True
-    
-    def _apply_naked_singles(self):
-        """Naked Singles: 후보가 하나뿐인 칸 찾아서 채우기"""
-        changed = False
-        
-        for row in range(9):
-            for col in range(9):
-                if self.board.is_empty(row, col):
-                    # 이 칸의 후보 숫자들 확인
-                    candidates = [num for num in range(1, 10) if self.candidates[row][col][num]]
-                    
-                    if len(candidates) == 1:
-                        # 후보가 하나뿐이면 바로 채우기
-                        num = candidates[0]
-                        self.board.set_value(row, col, num)
-                        changed = True
-                        
-                        # 이 칸의 모든 후보를 False로
-                        for n in range(1, 10):
-                            self.candidates[row][col][n] = False
-        
-        return changed
-    
-    def _apply_hidden_singles(self):
-        """Hidden Singles: 특정 숫자가 들어갈 수 있는 곳이 하나뿐인 경우"""
-        changed = False
-        
-        # 각 행, 열, 3x3 박스별로 확인
-        for num in range(1, 10):
-            # 행별 확인
-            for row in range(9):
-                possible_cols = [col for col in range(9) 
-                               if self.board.is_empty(row, col) and self.candidates[row][col][num]]
-                if len(possible_cols) == 1:
-                    col = possible_cols[0]
-                    self.board.set_value(row, col, num)
-                    changed = True
-                    for n in range(1, 10):
-                        self.candidates[row][col][n] = False
-            
-            # 열별 확인
-            for col in range(9):
-                possible_rows = [row for row in range(9) 
-                               if self.board.is_empty(row, col) and self.candidates[row][col][num]]
-                if len(possible_rows) == 1:
-                    row = possible_rows[0]
-                    self.board.set_value(row, col, num)
-                    changed = True
-                    for n in range(1, 10):
-                        self.candidates[row][col][n] = False
-            
-            # 3x3 박스별 확인
-            for box_row in range(3):
-                for box_col in range(3):
-                    possible_cells = []
-                    for r in range(box_row * 3, (box_row + 1) * 3):
-                        for c in range(box_col * 3, (box_col + 1) * 3):
-                            if self.board.is_empty(r, c) and self.candidates[r][c][num]:
-                                possible_cells.append((r, c))
-                    
-                    if len(possible_cells) == 1:
-                        row, col = possible_cells[0]
-                        self.board.set_value(row, col, num)
-                        changed = True
-                        for n in range(1, 10):
-                            self.candidates[row][col][n] = False
-        
-        return changed
-    
-    def _update_candidates(self):
-        """새로 채워진 숫자들을 바탕으로 후보 업데이트"""
-        changed = False
-        
-        for row in range(9):
-            for col in range(9):
-                if not self.board.is_empty(row, col):
-                    continue
-                
-                # 이 칸의 현재 후보들을 다시 검증
-                for num in range(1, 10):
-                    if self.candidates[row][col][num]:
-                        if not self.solver.is_valid_number(row, col, num):
-                            self.candidates[row][col][num] = False
-                            changed = True
-        
-        return changed
-    
-    def _backtrack_with_candidates(self):
-        """후보 정보를 활용한 스마트 백트래킹"""
-        # 가장 후보가 적은 빈 칸 찾기
-        min_candidates = 10
-        best_cell = None
-        
-        for row in range(9):
-            for col in range(9):
-                if self.board.is_empty(row, col):
-                    candidate_count = sum(1 for num in range(1, 10) if self.candidates[row][col][num])
-                    if candidate_count < min_candidates:
-                        min_candidates = candidate_count
-                        best_cell = (row, col)
-        
-        # 모든 칸이 채워졌으면 성공
+        # MRV 전략으로 최적의 빈 칸 선택
+        best_cell = solver._select_cell_mrv(empty_cells)
         if best_cell is None:
-            return True
-        
-        # 후보가 없는 칸이 있으면 실패
-        if min_candidates == 0:
-            return False
+            return 1
         
         row, col = best_cell
+        solutions_found = 0
         
-        # 이 칸의 후보 숫자들을 시도
-        candidate_numbers = [num for num in range(1, 10) if self.candidates[row][col][num]]
+        # 후보 숫자들을 시도
+        candidates = solver._candidates_for(row, col)
+        for value in candidates:
+            # 숫자 배치
+            solver.board.set_value(row, col, value)
+            solver._add_constraint(row, col, value)
+            
+            # 재귀적으로 해 개수 세기
+            solutions_found += self._count_solutions_recursive_reference(solver, empty_cells, cell_index + 1, max_count)
+            
+            # 최대 개수에 도달하면 조기 종료
+            if solutions_found >= max_count:
+                solver._remove_constraint(row, col, value)
+                solver.board.set_value(row, col, None)
+                return solutions_found
+            
+            # 되돌리기
+            solver._remove_constraint(row, col, value)
+            solver.board.set_value(row, col, None)
         
-        for num in candidate_numbers:
-            if self.solver.is_valid_number(row, col, num):
-                # 숫자 배치
-                self.board.set_value(row, col, num)
-                
-                # 후보 정보 백업
-                old_candidates = [[[self.candidates[r][c][n] for n in range(10)] 
-                                 for c in range(9)] for r in range(9)]
-                
-                # 후보 업데이트
-                for n in range(1, 10):
-                    self.candidates[row][col][n] = False
-                self._update_candidates()
-                
-                # 재귀 호출
-                if self._backtrack_with_candidates():
-                    return True
-                
-                # 실패하면 되돌리기
-                self.board.set_value(row, col, None)
-                self.candidates = old_candidates
-        
-        return False
+        return solutions_found

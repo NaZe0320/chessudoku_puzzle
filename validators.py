@@ -83,29 +83,31 @@ class PiecePlacer:
         return positions
     
     def is_valid_number_for_piece(self, row, col, number):
-        """해당 위치에 숫자를 놓을 수 있는지 기물 규칙으로 검사"""
+        """해당 위치에 숫자를 놓을 수 있는지 기물 규칙으로 검사 (최적화됨)"""
         # 기물이 있는 위치에는 숫자를 놓을 수 없음
         for piece in self.pieces:
             if piece.row == row and piece.col == col:
                 return False
         
-        # 모든 기물에 대해 검사
+        # 현재 위치를 공격할 수 있는 기물들만 검사
+        attacking_pieces = []
         for piece in self.pieces:
-            # 현재 위치가 이 기물의 공격 범위에 있는지 확인
             if self._can_piece_attack(piece, row, col):
-                # 이 기물이 공격할 수 있는 다른 위치에 같은 숫자가 있는지 확인
-                for target_row in range(9):
-                    for target_col in range(9):
-                        if target_row == row and target_col == col:
-                            continue
-                        # 기물이 있는 칸은 건드리지 않음
-                        if self._is_piece_position(target_row, target_col):
-                            continue
-                        target_value = self.board.get_value(target_row, target_col)
-                        if isinstance(target_value, int) and target_value == number:
-                            # 같은 기물이 이 위치도 공격할 수 있는지 확인
-                            if self._can_piece_attack(piece, target_row, target_col):
-                                return False
+                attacking_pieces.append(piece)
+        
+        # 공격하는 기물들에 대해서만 검사
+        for piece in attacking_pieces:
+            # 이 기물이 공격할 수 있는 위치들 중에서 같은 숫자가 있는지 확인
+            attack_positions = self._get_piece_attack_positions(piece)
+            for target_row, target_col in attack_positions:
+                if target_row == row and target_col == col:
+                    continue
+                # 기물이 있는 칸은 건드리지 않음
+                if self._is_piece_position(target_row, target_col):
+                    continue
+                target_value = self.board.get_value(target_row, target_col)
+                if isinstance(target_value, int) and target_value == number:
+                    return False
         
         return True
     
@@ -152,6 +154,46 @@ class PiecePlacer:
             return (target_row, target_col) in king_moves
         
         return False
+    
+    def _get_piece_attack_positions(self, piece):
+        """기물이 공격할 수 있는 모든 위치들을 반환 (최적화된 버전)"""
+        piece_row, piece_col = piece.row, piece.col
+        positions = []
+        
+        if piece.piece_type == 'N':  # 나이트
+            return self.get_knight_moves(piece_row, piece_col)
+        
+        elif piece.piece_type == 'R':  # 룩
+            # 같은 행
+            for c in range(9):
+                if c != piece_col:
+                    positions.append((piece_row, c))
+            # 같은 열
+            for r in range(9):
+                if r != piece_row:
+                    positions.append((r, piece_col))
+        
+        elif piece.piece_type == 'B':  # 비숍
+            # 대각선 위치들
+            positions.extend(self.get_diagonal_positions(piece_row, piece_col, 'right'))
+            positions.extend(self.get_diagonal_positions(piece_row, piece_col, 'left'))
+        
+        elif piece.piece_type == 'Q':  # 퀸 (룩 + 비숍)
+            # 룩 위치들
+            for c in range(9):
+                if c != piece_col:
+                    positions.append((piece_row, c))
+            for r in range(9):
+                if r != piece_row:
+                    positions.append((r, piece_col))
+            # 비숍 위치들
+            positions.extend(self.get_diagonal_positions(piece_row, piece_col, 'right'))
+            positions.extend(self.get_diagonal_positions(piece_row, piece_col, 'left'))
+        
+        elif piece.piece_type == 'K':  # 킹
+            return self.get_king_moves(piece_row, piece_col)
+        
+        return positions
 
 class SudokuValidator:
     """스도쿠 규칙 검사 클래스"""
