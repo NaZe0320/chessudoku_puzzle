@@ -10,7 +10,6 @@ try:
 except ImportError:
     REQUESTS_AVAILABLE = False
     print("경고: requests 모듈이 설치되지 않았습니다.")
-    print("실제 서버 전송을 위해서는 'pip install requests'를 실행해주세요.")
 
 class PuzzleDataFormatter:
     """퍼즐 데이터를 API 형식으로 변환하는 클래스"""
@@ -169,15 +168,15 @@ class DifficultyManager:
             "description": "쉬움 (35개 이하 빈칸)"
         },
         "medium": {
-            "max_holes": 50, 
+            "max_holes": 45, 
             "description": "보통 (50개 이하 빈칸)"
         },
         "hard": {
-            "max_holes": 65,
+            "max_holes": 50,
             "description": "어려움 (65개 이하 빈칸)"
         },
         "expert": {
-            "max_holes": 75,
+            "max_holes": 65,
             "description": "전문가 (75개 이하 빈칸)"
         }
     }

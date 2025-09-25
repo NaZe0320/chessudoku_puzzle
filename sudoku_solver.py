@@ -2,7 +2,7 @@ from board import Board
 from validators import PiecePlacer, SudokuValidator
 import random
 
-class ChessSudokuSolver:
+class ChesSudokuSolver:
     """체스 기물과 스도쿠 제약 조건을 모두 고려한 솔버"""
     
     def __init__(self, board, pieces):
@@ -26,12 +26,12 @@ class ChessSudokuSolver:
     
     def find_empty_cell(self):
         """빈 칸을 찾아서 (row, col) 반환, 없으면 None"""
-        # 기물이 있는 위치도 숫자로 채워야 하므로 직접 검사
+        # 기물이 없는 위치만 숫자로 채워야 함
         for row in range(9):
             for col in range(9):
                 value = self.board.get_value(row, col)
-                # None이거나 기물 문자인 경우 빈 칸으로 간주
-                if value is None or isinstance(value, str):
+                # None인 경우만 빈 칸으로 간주 (기물이 있는 칸은 건드리지 않음)
+                if value is None:
                     return (row, col)
         return None
     
@@ -63,72 +63,16 @@ class ChessSudokuSolver:
         # 모든 숫자를 시도했지만 실패
         return False
     
-    def solve_with_pieces(self, max_attempts=10):
-        """기물이 배치된 상태에서 스도쿠 풀기"""
+    def solve_with_pieces(self):
+        """기물이 배치된 상태에서 스도쿠 풀기 (올바른 백트래킹)"""
         print("체스 기물과 스도쿠 제약 조건으로 숫자 채우기 시작...")
         
-        for attempt in range(max_attempts):
-            # 보드를 초기 상태로 복원 (기물만 남기고)
-            self._reset_board_to_pieces()
-            
-            if self.solve():
-                # 해를 찾은 후 제약 조건 검증
-                if self.verify_solution():
-                    print("스도쿠 풀이 성공!")
-                    return True
-                else:
-                    print(f"시도 {attempt + 1}: 제약 조건 위반 발견, 다시 시도...")
-                    continue
-            else:
-                print(f"시도 {attempt + 1}: 해를 찾지 못함, 다시 시도...")
-                continue
-        
-        print("스도쿠 풀이 실패 - 최대 시도 횟수 초과")
-        return False
+        # 백트래킹으로 해 찾기
+        if self.solve():
+            print("스도쿠 풀이 성공!")
+            return True
+        else:
+            print("스도쿠 풀이 실패 - 해가 존재하지 않습니다.")
+            return False
     
-    def _reset_board_to_pieces(self):
-        """보드를 기물만 있는 초기 상태로 복원"""
-        # 모든 칸을 None으로 초기화
-        for row in range(9):
-            for col in range(9):
-                self.board.set_value(row, col, None)
-        
-        # 기물 위치에만 기물 문자 배치
-        for piece in self.pieces:
-            self.board.set_value(piece.row, piece.col, piece.piece_type)
-    
-    def verify_solution(self):
-        """완성된 해가 모든 제약 조건을 만족하는지 검증"""
-        print("제약 조건 검증 중...")
-        
-        # 1. 스도쿠 기본 규칙 검증
-        for row in range(9):
-            for col in range(9):
-                value = self.board.get_value(row, col)
-                if not isinstance(value, int) or value < 1 or value > 9:
-                    print(f"❌ ({row}, {col})에 잘못된 값: {value}")
-                    return False
-        
-        # 2. 기물 제약 조건 검증
-        for piece in self.pieces:
-            piece_value = self.board.get_value(piece.row, piece.col)
-            if not isinstance(piece_value, int):
-                print(f"❌ 기물 위치 ({piece.row}, {piece.col})에 숫자가 없음: {piece_value}")
-                return False
-            
-            # 이 기물이 영향을 미치는 모든 위치 확인
-            for row in range(9):
-                for col in range(9):
-                    if row == piece.row and col == piece.col:
-                        continue
-                    
-                    target_value = self.board.get_value(row, col)
-                    if isinstance(target_value, int) and target_value == piece_value:
-                        # 기물이 이 위치를 공격할 수 있는지 확인
-                        if self.piece_placer._can_piece_attack(piece, row, col):
-                            print(f"❌ 기물 제약 조건 위반: {piece.piece_type} ({piece.row}, {piece.col})={piece_value}와 ({row}, {col})={target_value}")
-                            return False
-        
-        print("✅ 모든 제약 조건 만족!")
-        return True
     

@@ -84,27 +84,37 @@ class PiecePlacer:
     
     def is_valid_number_for_piece(self, row, col, number):
         """해당 위치에 숫자를 놓을 수 있는지 기물 규칙으로 검사"""
+        # 기물이 있는 위치에는 숫자를 놓을 수 없음
+        for piece in self.pieces:
+            if piece.row == row and piece.col == col:
+                return False
+        
         # 모든 기물에 대해 검사
         for piece in self.pieces:
-            # 경우 1: 기물이 있는 위치에 이미 같은 숫자가 있고, 그 기물이 현재 위치를 공격할 수 있는 경우
-            piece_value = self.board.get_value(piece.row, piece.col)
-            if isinstance(piece_value, int) and piece_value == number:
-                if self._can_piece_attack(piece, row, col):
-                    return False
-            
-            # 경우 2: 현재 위치에 숫자를 놓으려는데, 그 위치가 기물 위치이고 기물의 영향 범위에 같은 숫자가 있는 경우
-            if piece.row == row and piece.col == col:
-                # 이 기물이 공격할 수 있는 모든 위치에 같은 숫자가 있는지 확인
+            # 현재 위치가 이 기물의 공격 범위에 있는지 확인
+            if self._can_piece_attack(piece, row, col):
+                # 이 기물이 공격할 수 있는 다른 위치에 같은 숫자가 있는지 확인
                 for target_row in range(9):
                     for target_col in range(9):
                         if target_row == row and target_col == col:
                             continue
+                        # 기물이 있는 칸은 건드리지 않음
+                        if self._is_piece_position(target_row, target_col):
+                            continue
                         target_value = self.board.get_value(target_row, target_col)
                         if isinstance(target_value, int) and target_value == number:
+                            # 같은 기물이 이 위치도 공격할 수 있는지 확인
                             if self._can_piece_attack(piece, target_row, target_col):
                                 return False
         
         return True
+    
+    def _is_piece_position(self, row, col):
+        """해당 위치에 기물이 있는지 확인"""
+        for piece in self.pieces:
+            if piece.row == row and piece.col == col:
+                return True
+        return False
     
     def _can_piece_attack(self, piece, target_row, target_col):
         """기물이 목표 위치를 공격할 수 있는지 확인"""

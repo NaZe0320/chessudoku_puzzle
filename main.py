@@ -59,34 +59,34 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     success, solved_board = puzzle_solver.solve_puzzle()
     
     # 5. 서버로 퍼즐 전송 (주석 처리)
-    # print("\n" + "=" * 50)
-    # print("5단계: 서버로 퍼즐 전송")
-    # print("=" * 50)
-    # 
-    # # 난이도 결정
-    # if custom_difficulty:
-    #     difficulty = custom_difficulty
-    #     print(f"사용자 지정 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
-    # else:
-    #     difficulty = DifficultyManager.get_difficulty_by_holes(puzzle_generator.holes_count)
-    #     print(f"자동 결정된 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
-    # 
-    # # API 클라이언트 생성
-    # api_client = PuzzleAPIClient()
-    # 
-    # # 서버 URL 설정
-    # if server_url:
-    #     api_client.set_server_url(server_url)
-    # 
-    # # 퍼즐 업로드
-    # upload_success, upload_result = api_client.upload_puzzle(
-    #     puzzle_board=puzzle_board,
-    #     answer_board=board,  # 완성된 보드가 정답
-    #     pieces=random_placer.get_pieces(),
-    #     difficulty=difficulty,
-    #     puzzle_type=puzzle_type,
-    #     daily_date=daily_date
-    # )
+    print("\n" + "=" * 50)
+    print("5단계: 서버로 퍼즐 전송")
+    print("=" * 50)
+    
+    # 난이도 결정
+    if custom_difficulty:
+        difficulty = custom_difficulty
+        print(f"사용자 지정 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
+    else:
+        difficulty = DifficultyManager.get_difficulty_by_holes(puzzle_generator.holes_count)
+        print(f"자동 결정된 난이도: {difficulty} (빈칸 {puzzle_generator.holes_count}개)")
+    
+    # API 클라이언트 생성
+    api_client = PuzzleAPIClient()
+    
+    # 서버 URL 설정
+    if server_url:
+        api_client.set_server_url(server_url)
+    
+    # 퍼즐 업로드
+    upload_success, upload_result = api_client.upload_puzzle(
+        puzzle_board=puzzle_board,
+        answer_board=board,  # 완성된 보드가 정답
+        pieces=random_placer.get_pieces(),
+        difficulty=difficulty,
+        puzzle_type=puzzle_type,
+        daily_date=daily_date
+    )
     
     # 결과 요약
     print("\n" + "=" * 50)
@@ -97,14 +97,14 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
     else:
         print("퍼즐 풀이 실패 😞")
     
-    # if upload_success:
-    #     print("서버 업로드 성공! 🚀")
-    #     if upload_result and "data" in upload_result:
-    #         puzzle_id = upload_result["data"].get("puzzle_id")
-    #         if puzzle_id:
-    #             print(f"퍼즐 ID: {puzzle_id}")
-    # else:
-    #     print("서버 업로드 실패 📤")
+    if upload_success:
+        print("서버 업로드 성공! 🚀")
+        if upload_result and "data" in upload_result:
+            puzzle_id = upload_result["data"].get("puzzle_id")
+            if puzzle_id:
+                print(f"퍼즐 ID: {puzzle_id}")
+    else:
+        print("서버 업로드 실패 📤")
 
 # 사용자 편의 함수들
 def create_normal_puzzle(server_url=None, difficulty=None):

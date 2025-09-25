@@ -1,5 +1,5 @@
 from board import Board
-from sudoku_solver import ChessSudokuSolver
+from sudoku_solver import ChesSudokuSolver
 import random
 import copy
 
@@ -85,7 +85,7 @@ class PuzzleGenerator:
         self._copy_board(self.puzzle_board, test_board)
         
         # 솔버 생성
-        solver = ChessSudokuSolver(test_board, self.pieces)
+        solver = ChesSudokuSolver(test_board, self.pieces)
         
         # 해의 개수 세기
         return self._count_solutions_recursive(solver, 0, max_count)
@@ -175,7 +175,7 @@ class ConstraintPropagationSolver:
     def __init__(self, board, pieces):
         self.board = board
         self.pieces = pieces
-        self.solver = ChessSudokuSolver(board, pieces)
+        self.solver = ChesSudokuSolver(board, pieces)
         
         # 각 칸의 가능한 숫자들을 저장하는 3차원 배열
         self.candidates = [[[True for _ in range(10)] for _ in range(9)] for _ in range(9)]
