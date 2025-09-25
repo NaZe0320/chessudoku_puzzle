@@ -13,7 +13,7 @@ class RandomPiecePlacer:
         """랜덤하게 기물들을 배치"""
         if piece_counts is None:
             # 기본 기물 개수 설정
-            piece_counts = {'K': 0, 'Q': 0, 'R': 0, 'B': 0, 'N': 4}
+            piece_counts = {'K': 1, 'Q': 0, 'R': 0, 'B': 3, 'N': 2}
         
         # 기물 타입과 개수를 리스트로 변환하여 랜덤하게 섞기
         pieces_to_place = []
