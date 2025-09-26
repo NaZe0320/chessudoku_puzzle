@@ -150,32 +150,53 @@ class PuzzleGenerator:
         return completed_cells
     
     def is_row_complete(self, row):
-        """해당 행이 완성되었는지 확인 (1-9 모든 숫자가 있는지)"""
-        numbers = set()
+        """해당 행이 완성되었는지 확인 (기물 제외한 나머지 칸들에 빈칸이 없으면 완성)"""
+        empty_count = 0
+        
         for col in range(9):
+            # 기물이 있는 칸은 제외
+            if self.is_piece_position(row, col):
+                continue
+            
             value = self.puzzle_board.get_value(row, col)
-            if isinstance(value, int):
-                numbers.add(value)
-        return len(numbers) == 9
+            if not isinstance(value, int):
+                empty_count += 1
+        
+        # 기물을 제외한 나머지 칸들에 빈칸이 없으면 완성
+        return empty_count == 0
     
     def is_col_complete(self, col):
-        """해당 열이 완성되었는지 확인 (1-9 모든 숫자가 있는지)"""
-        numbers = set()
+        """해당 열이 완성되었는지 확인 (기물 제외한 나머지 칸들에 빈칸이 없으면 완성)"""
+        empty_count = 0
+        
         for row in range(9):
+            # 기물이 있는 칸은 제외
+            if self.is_piece_position(row, col):
+                continue
+            
             value = self.puzzle_board.get_value(row, col)
-            if isinstance(value, int):
-                numbers.add(value)
-        return len(numbers) == 9
+            if not isinstance(value, int):
+                empty_count += 1
+        
+        # 기물을 제외한 나머지 칸들에 빈칸이 없으면 완성
+        return empty_count == 0
     
     def is_box_complete(self, box_row, box_col):
-        """해당 3x3 박스가 완성되었는지 확인 (1-9 모든 숫자가 있는지)"""
-        numbers = set()
+        """해당 3x3 박스가 완성되었는지 확인 (기물 제외한 나머지 칸들에 빈칸이 없으면 완성)"""
+        empty_count = 0
+        
         for r in range(box_row, box_row + 3):
             for c in range(box_col, box_col + 3):
+                # 기물이 있는 칸은 제외
+                if self.is_piece_position(r, c):
+                    continue
+                
                 value = self.puzzle_board.get_value(r, c)
-                if isinstance(value, int):
-                    numbers.add(value)
-        return len(numbers) == 9
+                if not isinstance(value, int):
+                    empty_count += 1
+        
+        # 기물을 제외한 나머지 칸들에 빈칸이 없으면 완성
+        return empty_count == 0
     
     def find_unconstrained_cells(self):
         """기물의 공격 범위에 있지 않은 칸들 찾기"""
@@ -335,18 +356,112 @@ class PuzzleGenerator:
         """전략별 조각 통계 반환"""
         stats = {'completed_lines': 0, 'unconstrained': 0, 'regular': 0}
         
-        # 현재 후보들 확인
-        candidates = self.get_strategic_carve_candidates()
+        # 조각된 칸들을 원본 보드에서 확인
+        original_board = copy.deepcopy(self.complete_board)
         
         for row, col in self.carved_cells:
-            if (row, col) in candidates['completed_lines']:
+            # 원본 보드에서 이 칸이 어떤 전략에 해당했는지 확인
+            if self.was_in_completed_line(row, col, original_board):
                 stats['completed_lines'] += 1
-            elif (row, col) in candidates['unconstrained']:
+            elif self.was_unconstrained(row, col, original_board):
                 stats['unconstrained'] += 1
             else:
                 stats['regular'] += 1
         
         return stats
+    
+    def was_in_completed_line(self, row, col, original_board):
+        """원본 보드에서 해당 칸이 완성된 라인에 있었는지 확인"""
+        # 임시로 원본 보드에서 해당 칸을 빈칸으로 만들어서 확인
+        original_value = original_board.get_value(row, col)
+        original_board.set_value(row, col, None)
+        
+        # 완성된 라인들 찾기
+        completed_cells = []
+        
+        # 완성된 행 찾기
+        for r in range(9):
+            if self.is_row_complete_with_board(r, original_board):
+                for c in range(9):
+                    if self.is_carveable_with_board(r, c, original_board):
+                        completed_cells.append((r, c))
+        
+        # 완성된 열 찾기
+        for c in range(9):
+            if self.is_col_complete_with_board(c, original_board):
+                for r in range(9):
+                    if self.is_carveable_with_board(r, c, original_board):
+                        completed_cells.append((r, c))
+        
+        # 완성된 3x3 박스 찾기
+        for box_row in range(0, 9, 3):
+            for box_col in range(0, 9, 3):
+                if self.is_box_complete_with_board(box_row, box_col, original_board):
+                    for r in range(box_row, box_row + 3):
+                        for c in range(box_col, box_col + 3):
+                            if self.is_carveable_with_board(r, c, original_board):
+                                completed_cells.append((r, c))
+        
+        # 원본 값 복원
+        original_board.set_value(row, col, original_value)
+        
+        return (row, col) in completed_cells
+    
+    def was_unconstrained(self, row, col, original_board):
+        """원본 보드에서 해당 칸이 기물 제약이 없었는지 확인"""
+        return not self.is_under_piece_constraint(row, col)
+    
+    def is_carveable_with_board(self, row, col, board):
+        """특정 보드에서 해당 칸이 조각 가능한지 확인"""
+        # 기물이 있는 칸은 조각할 수 없음
+        if self.is_piece_position(row, col):
+            return False
+        
+        # 숫자가 있는 칸만 조각 가능
+        return isinstance(board.get_value(row, col), int)
+    
+    def is_row_complete_with_board(self, row, board):
+        """특정 보드에서 해당 행이 완성되었는지 확인"""
+        empty_count = 0
+        
+        for col in range(9):
+            if self.is_piece_position(row, col):
+                continue
+            
+            value = board.get_value(row, col)
+            if not isinstance(value, int):
+                empty_count += 1
+        
+        return empty_count == 0
+    
+    def is_col_complete_with_board(self, col, board):
+        """특정 보드에서 해당 열이 완성되었는지 확인"""
+        empty_count = 0
+        
+        for row in range(9):
+            if self.is_piece_position(row, col):
+                continue
+            
+            value = board.get_value(row, col)
+            if not isinstance(value, int):
+                empty_count += 1
+        
+        return empty_count == 0
+    
+    def is_box_complete_with_board(self, box_row, box_col, board):
+        """특정 보드에서 해당 3x3 박스가 완성되었는지 확인"""
+        empty_count = 0
+        
+        for r in range(box_row, box_row + 3):
+            for c in range(box_col, box_col + 3):
+                if self.is_piece_position(r, c):
+                    continue
+                
+                value = board.get_value(r, c)
+                if not isinstance(value, int):
+                    empty_count += 1
+        
+        return empty_count == 0
     
     def verify_puzzle_solvability(self):
         """생성된 퍼즐의 풀이 가능성 재검증"""
