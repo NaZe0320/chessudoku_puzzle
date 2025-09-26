@@ -43,7 +43,7 @@ def main(server_url=None, custom_difficulty=None, puzzle_type="normal", daily_da
         print("3단계: 퍼즐 생성 (빈칸 조각하기 - 논리적 풀이 가능성 검증)")
         print("=" * 50)
         
-        max_holes = 25  # 원하는 빈칸 개수 설정
+        max_holes = 35  # 원하는 빈칸 개수 설정
         puzzle_generator = PuzzleGenerator(board, random_placer.get_pieces())
         puzzle_board = puzzle_generator.generate_puzzle(max_holes=max_holes)
         
